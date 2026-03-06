@@ -1,7 +1,7 @@
 import torch
 import pickle
 import numpy as np
-from model import SASRec
+from movie_recommendation.models.model import SASRec
 from tqdm import tqdm
 
 args = {

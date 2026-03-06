@@ -25,7 +25,7 @@ except ImportError as exc:
         "Missing dependency 'langchain-groq'. Install with: pip install langchain-groq"
     ) from exc
 
-import agent_utils
+from . import agent_utils
 
 load_dotenv()
 

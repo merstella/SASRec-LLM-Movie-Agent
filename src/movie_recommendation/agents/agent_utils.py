@@ -9,7 +9,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from model import SASRec
+from movie_recommendation.models.model import SASRec
 
 DATA_DIR = Path("data")
 CHECKPOINT_PATH = Path("checkpoints/sasrec.pt")

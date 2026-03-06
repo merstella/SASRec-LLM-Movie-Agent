@@ -4,7 +4,7 @@ import pickle
 import random
 import os
 from tqdm import tqdm
-from model import SASRec
+from movie_recommendation.models.model import SASRec
 
 args = {
     'maxlen': 50,

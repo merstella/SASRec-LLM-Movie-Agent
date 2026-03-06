@@ -1,4 +1,10 @@
-import agent_utils
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from movie_recommendation.agents import agent_utils
 
 uid = 1
 
