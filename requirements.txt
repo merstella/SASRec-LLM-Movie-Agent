@@ -1,0 +1,30 @@
+# Data Processing & Math
+numpy
+pandas
+
+# Machine Learning & Optimization
+scikit-learn
+optuna
+
+# Deep Learning (PyTorch & Hugging Face)
+torch
+transformers
+datasets
+
+# API & Deployment
+fastapi
+uvicorn
+
+# Frontend / UI
+streamlit
+
+# LLM Frameworks
+langchain
+langchain-community
+langchain-groq
+langgraph
+python-dotenv
+
+pyarrow 
+fastparquet
+sentence-transformers
