@@ -1,6 +1,6 @@
-# Movie Recommendation Project
+# Movie Recommendation System
 
-SASRec-based movie recommendation system with a Groq-powered reasoning agent.
+End-to-end movie recommendation project based on SASRec, semantic reranking, Groq LLM reasoning, FastAPI deployment, and Streamlit demo.
 
 ## Project Structure
 ```text
@@ -10,25 +10,31 @@ movie-recommendation/
 │     ├─ agents/
 │     │  ├─ main_agent.py
 │     │  └─ agent_utils.py
+│     ├─ api/
+│     │  └─ app.py
+│     ├─ evaluation/
+│     │  ├─ baseline.py
+│     │  └─ evaluate_sasrec.py
 │     ├─ models/
 │     │  └─ model.py
-│     ├─ pipelines/
-│     │  ├─ convert_parquet.py
-│     │  ├─ create_embeddings.py
-│     │  ├─ preprocess_sasrec.py
-│     │  └─ train.py
-│     └─ evaluation/
-│        ├─ baseline.py
-│        └─ evaluate_sasrec.py
+│     └─ pipelines/
+│        ├─ convert_parquet.py
+│        ├─ create_embeddings.py
+│        ├─ preprocess_sasrec.py
+│        └─ train.py
 ├─ scripts/
 │  ├─ run_agent.py
+│  ├─ run_api.py
 │  ├─ run_baseline.py
 │  ├─ run_convert.py
 │  ├─ run_embeddings.py
 │  ├─ run_eval.py
 │  ├─ run_preprocess.py
 │  ├─ run_train.py
+│  ├─ streamlit_demo.py
 │  └─ test_tools.py
+├─ docs/
+│  └─ report_short.md
 ├─ data/
 ├─ checkpoints/
 ├─ logs/
@@ -37,7 +43,79 @@ movie-recommendation/
 └─ .env
 ```
 
-## Quick Start
+## Architecture
+1. Candidate generation: SASRec predicts next likely items from user sequence history.
+2. Query-aware rerank: sentence-transformer embedding reranks SASRec top-`k` candidates by cosine similarity to the user query.
+3. Reason generation: Groq LLM converts recommendation list into user-facing reasons in strict JSON format.
+4. Serving:
+   - FastAPI for `/health` and `/recommend`
+   - Streamlit for interactive demo
+
+## Attention Equations
+SASRec uses causal self-attention over user history sequence.
+
+\[
+Q = XW_Q,\quad K = XW_K,\quad V = XW_V
+\]
+
+\[
+\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V
+\]
+
+- `X`: input sequence embeddings (item + position)
+- `M`: causal mask that blocks future positions
+- `d_k`: key dimension scaling factor
+
+## Dataset and Pipeline
+Dataset: MovieLens 1M (`ml-1m`).
+
+Pipeline:
+1. `run_convert.py`: convert raw `.dat` files to parquet (`data/interactions.parquet`, `data/items.parquet`).
+2. `run_preprocess.py`: map IDs and split sequence data into train/val/test (`data/sasrec_data.pkl`).
+3. `run_embeddings.py`: build item text embeddings (`data/item_emb.npy`, `data/item_meta.json`).
+4. `run_train.py`: train SASRec and save checkpoint (`checkpoints/sasrec.pt`).
+5. `run_eval.py`: evaluate SASRec Recall@10 and NDCG@10.
+6. `run_baseline.py`: evaluate Popularity and Item-KNN baselines.
+
+## Metrics
+Current logs in `logs/` include training loss curves.  
+Run `run_eval.py` and `run_baseline.py` to populate final benchmark table.
+
+| Model | Recall@10 | NDCG@10 |
+|---|---:|---:|
+| Popularity | TBD | TBD |
+| Item-KNN | TBD | TBD |
+| SASRec | TBD | TBD |
+
+## Phase 4 Deploy + Demo
+### FastAPI
+- `GET /health`
+- `POST /recommend` with body:
+```json
+{ "user_id": 5, "query": "action movies with space elements" }
+```
+
+Run:
+```bash
+python scripts/run_api.py
+```
+
+### Streamlit Demo
+Input:
+- `user_id`
+- free-text `query`
+
+Output:
+- movie recommendations
+- generated reason per movie
+
+Run:
+```bash
+streamlit run scripts/streamlit_demo.py
+```
+
+## Setup
+Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
@@ -48,36 +126,13 @@ GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL=llama-3.1-8b-instant
 ```
 
-## Run Commands
-- Convert MovieLens `.dat` files:
+## Quick Run Commands
 ```bash
 python scripts/run_convert.py
-```
-- Preprocess for SASRec:
-```bash
 python scripts/run_preprocess.py
-```
-- Create item embeddings:
-```bash
 python scripts/run_embeddings.py
-```
-- Train SASRec:
-```bash
 python scripts/run_train.py
-```
-- Evaluate SASRec:
-```bash
 python scripts/run_eval.py
-```
-- Run baselines:
-```bash
 python scripts/run_baseline.py
-```
-- Run recommendation agent:
-```bash
 python scripts/run_agent.py
-```
-- Tool smoke test:
-```bash
-python scripts/test_tools.py
 ```
