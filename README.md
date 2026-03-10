@@ -5,11 +5,7 @@ End-to-end movie recommendation project based on SASRec, semantic reranking, Gro
 ## One-Click Deploy (No Local Install)
 This repo now includes Render blueprint config at `render.yaml`.
 
-Deploy directly from GitHub:
-
-```text
-https://render.com/deploy?repo=https://github.com/merstella/SASRec-LLM-Movie-Agent
-```
+Deploy directly from GitHub: [click here](https://render.com/deploy?repo=https://github.com/merstella/SASRec-LLM-Movie-Agent)
 
 On Render:
 1. Click the deploy link above.
