@@ -114,6 +114,22 @@ Run:
 streamlit run scripts/streamlit_demo.py
 ```
 
+## One-Click Deploy (No Local Install)
+This repo now includes Render blueprint config at `render.yaml`.
+
+Deploy directly from GitHub:
+
+```text
+https://render.com/deploy?repo=https://github.com/merstella/SASRec-LLM-Movie-Agent
+```
+
+On Render:
+1. Click the deploy link above.
+2. Keep the detected `render.yaml` service.
+3. Set required secrets: `GROQ_API_KEY` and `TMDB_API_KEY`.
+4. Click **Create New Web Service**.
+5. Use the generated public URL to share your live demo (users only open link, no installation needed).
+
 ## Setup
 Install dependencies:
 ```bash

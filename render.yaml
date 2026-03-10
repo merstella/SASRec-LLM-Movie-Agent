@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: sasrec-llm-movie-agent
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run scripts/streamlit_demo.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: GROQ_MODEL
+        value: llama-3.1-8b-instant
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
