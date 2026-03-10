@@ -1,6 +1,9 @@
 from pathlib import Path
 import json
+import os
+import re
 import sys
+from urllib import parse, request
 
 import pandas as pd
 import streamlit as st
@@ -8,9 +11,12 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from movie_recommendation.agents import agent_utils
 from movie_recommendation.agents.main_agent import GROQ_MODEL, invoke_agent
 
 USERS_DAT_PATH = ROOT / "ml-1m" / "users.dat"
+TMDB_SEARCH_URL = "https://api.themoviedb.org/3/search/movie"
+TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
 AGE_LABELS = {
     1: "Under 18",
     18: "18-24",
@@ -90,11 +96,93 @@ def get_user_profile(user_id: int, users_df: pd.DataFrame):
     }
 
 
-st.set_page_config(page_title="Movie Recommendation Demo", page_icon="🎬", layout="wide")
+def get_user_history(user_id: int, n: int):
+    history = agent_utils.get_user_history(user_id=user_id, n=n)
+    if not isinstance(history, list):
+        return []
+    return history
+
+
+def summarize_top_genres(history):
+    counts = {}
+    for row in history:
+        genres = str(row.get("genres", ""))
+        for g in genres.split("|"):
+            g = g.strip()
+            if not g:
+                continue
+            counts[g] = counts.get(g, 0) + 1
+    ranked = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    return [g for g, _ in ranked[:5]]
+
+
+def split_title_year(title: str):
+    match = re.match(r"^(.*?)(?:\s*\((\d{4})\))?$", title.strip())
+    if not match:
+        return title.strip(), None
+    name = match.group(1).strip()
+    year = match.group(2)
+    return name, int(year) if year else None
+
+
+def _tmdb_request(params: dict):
+    query_string = parse.urlencode(params)
+    with request.urlopen(f"{TMDB_SEARCH_URL}?{query_string}", timeout=8) as resp:
+        payload = resp.read().decode("utf-8")
+    return json.loads(payload)
+
+
+def _pick_poster_path(results, year):
+    if year is not None:
+        for movie in results:
+            release = str(movie.get("release_date", ""))
+            if release[:4] == str(year) and movie.get("poster_path"):
+                return movie["poster_path"]
+    for movie in results:
+        if movie.get("poster_path"):
+            return movie["poster_path"]
+    return None
+
+
+@st.cache_data(show_spinner=False, ttl=86400)
+def get_poster_url(title: str, tmdb_api_key: str):
+    if not tmdb_api_key:
+        return None
+
+    name, year = split_title_year(title)
+    params = {
+        "api_key": tmdb_api_key,
+        "query": name,
+        "include_adult": "false",
+    }
+    if year is not None:
+        params["year"] = year
+
+    try:
+        data = _tmdb_request(params)
+        results = data.get("results", [])
+        poster_path = _pick_poster_path(results, year)
+        if poster_path:
+            return f"{TMDB_IMAGE_BASE}{poster_path}"
+
+        if year is not None:
+            params.pop("year", None)
+            data = _tmdb_request(params)
+            results = data.get("results", [])
+            poster_path = _pick_poster_path(results, None)
+            if poster_path:
+                return f"{TMDB_IMAGE_BASE}{poster_path}"
+    except Exception:
+        return None
+    return None
+
+
+st.set_page_config(page_title="Movie Recommendation Demo", layout="wide")
 st.title("Movie Recommendation Demo")
 st.caption(f"Model: {GROQ_MODEL}")
 
 users_df = load_users_df(str(USERS_DAT_PATH))
+tmdb_api_key = os.getenv("TMDB_API_KEY", "").strip()
 
 col1, col2 = st.columns([1, 2])
 with col1:
@@ -118,9 +206,35 @@ with col1:
         value="I'm looking for action movies with science fiction or space elements.",
         height=120,
     )
+    history_n = st.slider("Watched history length", min_value=5, max_value=30, value=12, step=1)
+    watched_history = get_user_history(int(user_id), history_n)
+    top_genres = summarize_top_genres(watched_history)
+    if not tmdb_api_key:
+        st.info("Add `TMDB_API_KEY` to `.env` to show movie posters.")
     submitted = st.button("Recommend", type="primary", use_container_width=True)
 
+# Sidebar context panel
+st.sidebar.header("Watched History")
+if watched_history:
+    if top_genres:
+        st.sidebar.caption("Top genres: " + ", ".join(top_genres))
+    for idx, row in enumerate(watched_history, start=1):
+        title = row.get("title", "Unknown")
+        genres = row.get("genres", "")
+        st.sidebar.markdown(f"**{idx}. {title}**")
+        if genres:
+            st.sidebar.caption(genres)
+else:
+    st.sidebar.info("No watch history found for this user.")
+
 with col2:
+    st.subheader("User Context")
+    if watched_history:
+        context_df = pd.DataFrame(watched_history)
+        st.dataframe(context_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No watched history to display.")
+
     if submitted:
         with st.spinner("Generating recommendations..."):
             result = invoke_agent(int(user_id), query)
@@ -130,13 +244,23 @@ with col2:
             st.warning("No recommendations returned.")
         else:
             st.subheader("Recommended Movies")
+            st.caption("Poster source: TMDB")
+            cols = st.columns(3)
             for idx, rec in enumerate(recs, start=1):
                 title = rec.get("title", "Unknown")
                 item_id = rec.get("item_id", "N/A")
                 reason = rec.get("reason", "")
-                st.markdown(f"**{idx}. {title}** (`item_id={item_id}`)")
-                st.write(reason)
-                st.divider()
+                poster_url = get_poster_url(str(title), tmdb_api_key)
+
+                with cols[(idx - 1) % 3]:
+                    if poster_url:
+                        st.image(poster_url, use_container_width=True)
+                    else:
+                        st.markdown("`No poster`")
+                    st.markdown(f"**{idx}. {title}**")
+                    st.caption(f"item_id={item_id}")
+                    st.write(reason)
+                    st.divider()
 
         if result.get("error") or result.get("raw_output"):
             with st.expander("Debug Output"):
