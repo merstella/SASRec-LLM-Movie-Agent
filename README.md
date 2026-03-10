@@ -54,13 +54,9 @@ movie-recommendation/
 ## Attention Equations
 SASRec uses causal self-attention over user history sequence.
 
-\[
-Q = XW_Q,\quad K = XW_K,\quad V = XW_V
-\]
+$$Q = XW_Q,\quad K = XW_K,\quad V = XW_V$$
 
-\[
-\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V
-\]
+$$\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V$$
 
 - `X`: input sequence embeddings (item + position)
 - `M`: causal mask that blocks future positions
@@ -83,9 +79,9 @@ Run `run_eval.py` and `run_baseline.py` to populate final benchmark table.
 
 | Model | Recall@10 | NDCG@10 |
 |---|---:|---:|
-| Popularity | TBD | TBD |
-| Item-KNN | TBD | TBD |
-| SASRec | TBD | TBD |
+| Popularity | 0.0353 | 0.0174 |
+| Item-KNN | 0.0631 | 0.0334 |
+| **SASRec** | **0.2098** | **0.1111**|
 
 ## Phase 4 Deploy + Demo
 ### FastAPI
