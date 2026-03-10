@@ -54,13 +54,9 @@ movie-recommendation/
 ## Attention Equations
 SASRec uses causal self-attention over user history sequence.
 
-\[
-Q = XW_Q,\quad K = XW_K,\quad V = XW_V
-\]
+$$Q = XW_Q,\quad K = XW_K,\quad V = XW_V$$
 
-\[
-\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V
-\]
+$$\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V$$
 
 - `X`: input sequence embeddings (item + position)
 - `M`: causal mask that blocks future positions
