@@ -2,18 +2,6 @@
 
 End-to-end movie recommendation project based on SASRec, semantic reranking, Groq LLM reasoning, FastAPI deployment, and Streamlit demo.
 
-## One-Click Deploy (No Local Install)
-This repo now includes Render blueprint config at `render.yaml`.
-
-Deploy directly from GitHub: [click here](https://render.com/deploy?repo=https://github.com/merstella/SASRec-LLM-Movie-Agent)
-
-On Render:
-1. Click the deploy link above.
-2. Keep the detected `render.yaml` service.
-3. Set required secrets: `GROQ_API_KEY` and `TMDB_API_KEY`.
-4. Click **Create New Web Service**.
-5. Use the generated public URL to share your live demo (users only open link, no installation needed).
-
 ## Project Structure
 ```text
 movie-recommendation/
