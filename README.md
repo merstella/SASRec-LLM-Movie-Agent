@@ -2,6 +2,8 @@
 
 End-to-end movie recommendation project based on SASRec, semantic reranking, Groq LLM reasoning, FastAPI deployment, and Streamlit demo.
 
+## [DEMO VIDEO HERE](https://www.youtube.com/watch?v=XRKj_KMElzI)
+
 ## Project Structure
 ```text
 movie-recommendation/
